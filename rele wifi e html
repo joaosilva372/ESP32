@@ -6,7 +6,7 @@
 #define relay2 22
 
 // const auxiliar
-const char *ssid = "Geladeira 5G";
+const char *ssid = "93CB_Fibra";
 const char *password = "3J8v7n2x"; 
 
 WiFiServer server(80);
