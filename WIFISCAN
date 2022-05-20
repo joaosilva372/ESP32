@@ -1,0 +1,49 @@
+#include <esp32WiFi.h>
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <WiFiServer.h>
+#include <WiFiUdp.h>
+
+#include <WiFi.h>
+
+String  redeSSID ="";
+int intensidadeSinal = -9999;
+
+void setup()
+{
+  //inicializar serial
+  Serial.begin(115200);
+  // configurano o modo de operação do WIFI como estação
+  WiFi.mode(WIFI_STA);
+  // desonecta do acess point caso ele ja esteja conectado
+  WiFi.disconnect();
+}
+void loop()
+{
+  int n = WiFi.scanNetworks();
+  Serial.println("Escanmento realizado");
+  if (n ==0){
+    Serial.println("nenhuma rede encontrada");
+    else{
+     redeSSID = "";
+     intensidadeSinal= -9999;
+     Serial.print(n);
+     Serial.println("Redes Econtradas");
+     for (int i = 0; i < n; ++i){
+      Serial.print(WiFi.SSID(i)); //nome da rede
+      Serial.print(":");
+      Serial.print(WiFi.RSSI(i)); //intensidade do sinal
+      if(abs(WiFi.RSSI(i)) <abs(intensidadeSinal))
+      {
+        intensidadeSinal = WiFi.RSSI(i);
+        redeSSID = WiFi.SSID(i);
+        Serial.print("REDE COM MELHOR SINAL ENCONTRADO:");
+        Serial.print(redeSSID);
+        Serial.print(" - Sinal : ");
+        Serial.println(intensidadeSinal);
+      }
+     }
+     
+    }
+  }
+}
