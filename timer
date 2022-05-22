@@ -1,0 +1,141 @@
+// INCLUSÃO DE BIBLIOTECAS
+#include <NTPClient.h>
+#include "WiFi.h"
+
+// DEFINIÇÕES DE PINOS
+#define relay1 25
+#define relay2 26
+
+// const auxiliar
+const char *ssid = "93CB_Fibra";
+const char *password = "3J8v7n2x"; 
+
+WiFiServer server(80);
+
+void relay_wifi();
+
+
+// DEFINIÇÕES
+#define horaLigar         04
+#define minutoLigar       38
+#define segundoLigar      00
+
+#define horasAcionado     00
+#define minutosAcionado   03
+#define segundosAcionado  00
+
+#define horaLigar2         04
+#define minutoLigar2       40
+#define segundoLigar2      00
+
+#define horasAcionado2     00
+#define minutosAcionado2   04
+#define segundosAcionado2  00
+
+#define LIGA LOW
+
+// DECLARAÇÃO DE VARIÁVEIS
+unsigned long liga;     // VARIÁVEL QUE RECEBE O VALOR PARA LIGAR
+unsigned long desliga;  // VARIÁVEL QUE RECEBE O VALOR PARA DESLIGAR
+unsigned long liga2;     // VARIÁVEL QUE RECEBE O VALOR PARA LIGAR
+unsigned long desliga2;  // VARIÁVEL QUE RECEBE O VALOR PARA DESLIGAR
+
+unsigned long minutosCorrido;  // VARIAVEL QUE RECEBE O VALOR DE MINUTOS CORDRIDOS DURANTE O DIA
+unsigned long segundosCorrido; // VARIAVEL QUE RECEBE O VALOR DE SEGUNDOS CORDRIDOS DURANTE O DIA
+unsigned long minutosCorrido2;  // VARIAVEL QUE RECEBE O VALOR DE MINUTOS CORDRIDOS DURANTE O DIA
+unsigned long segundosCorrido2; // VARIAVEL QUE RECEBE O VALOR DE SEGUNDOS CORDRIDOS DURANTE O DIA
+
+// INSTANCIANDO OBJETOS
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "a.st1.ntp.br", -4 * 3600 , 60000); // (CONEXÃO UDP, SERVIDOR NTP, AJUSTE DE FUSO (EM MINUTOS), TEMPO DE ATUALIZAÇÃO)
+
+// DECLARAÇÃO DE FUNÇÕES
+unsigned long contaMinutos  (int hora, int minuto);
+//unsigned long contaSegundos (int hora, int minuto, int segundo);
+unsigned long contaMinutos2  (int hora, int minuto);
+//unsigned long contaSegundos2 (int hora, int minuto, int segundo);
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(relay1, OUTPUT);
+  digitalWrite(relay1, !LIGA); // COMEÇA COM RELE DESLIGADO;
+  pinMode(relay2, OUTPUT);
+  digitalWrite(relay2, !LIGA); // COMEÇA COM RELE DESLIGADO;
+  //pinMode(pinLed, OUTPUT);
+  //digitalWrite(pinLed, HIGH); // COMEÇA COM LED LIGADO;
+
+  delay(1000); //DELAY PARA EXIBIR SERIAL.PRINT
+  Serial.print("Conectando ao WiFi ");
+
+  Serial.println();
+  Serial.print("Conectado-se a ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+
+    while(WiFi.status() != WL_CONNECTED)
+  {
+    delay(800);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi Conectado");
+  Serial.println("Endereço de IP: ");
+  Serial.print(WiFi.localIP());
+  server.begin();
+
+  //digitalWrite(pinLed, LOW); // LED DESLIGADO = WIFI CONECTADO;;
+  timeClient.begin();
+
+    liga    = contaMinutos(horaLigar , minutoLigar);
+    desliga = contaMinutos(horaLigar + horasAcionado , minutoLigar + minutosAcionado);
+    liga2    = contaMinutos2(horaLigar2 , minutoLigar2);
+    desliga2 = contaMinutos2(horaLigar2 + horasAcionado2 , minutoLigar2 + minutosAcionado2);
+
+  //liga    = contaSegundos(horaLigar , minutoLigar, segundoLigar);
+  //desliga = contaSegundos(horaLigar + horasAcionado , minutoLigar + minutosAcionado, segundoLigar + segundosAcionado);
+  //liga2    = contaSegundos2(horaLigar2 , minutoLigar2, segundoLigar2);
+  //desliga2 = contaSegundos2(horaLigar2 + horasAcionado2 , minutoLigar2 + minutosAcionado, segundoLigar + segundosAcionado);
+}
+
+void loop() {
+  timeClient.update(); // SINCROZINA COM O HORARIO DA INTERNET
+  minutosCorrido  = contaMinutos(timeClient.getHours(), timeClient.getMinutes());
+  minutosCorrido2  = contaMinutos(timeClient.getHours(), timeClient.getMinutes()); // CONVERTE O HORARIO PARA O PADRÃO DE MINUTOS CORRIDOS DURANTE O DIA
+  //segundosCorrido = contaSegundos(timeClient.getHours(), timeClient.getMinutes(), timeClient.getSeconds()); // CONVERTE O HORARIO PARA O PADRÃO DE SEGUNDOS CORRIDOS DURANTE O DIA
+
+  if (minutosCorrido >= liga && minutosCorrido < desliga) {
+  //if (segundosCorrido >= liga && segundosCorrido < desliga) {
+    digitalWrite(relay1, LIGA); // RELE LIGADO;
+
+    Serial.print("LIGADO!!: ");
+    Serial.println(timeClient.getFormattedTime());
+    delay(1000);
+  }
+  digitalWrite(relay1, !LIGA); // RELE DESLIGADO;
+  if (minutosCorrido2 >= liga2 && minutosCorrido2 < desliga2) {
+  //if (segundosCorrido >= liga && segundosCorrido < desliga) {
+    digitalWrite(relay2, LIGA); // RELE LIGADO;
+
+    Serial.print("LIGADO!!: ");
+    Serial.println(timeClient.getFormattedTime());
+    delay(1000);
+  }
+  digitalWrite(relay2, !LIGA); // RELE DESLIGADO;
+}
+
+// IMPLEMENTO DE FUNÇÕES
+
+unsigned long contaMinutos(int hora, int minuto) {
+  return hora * 60 + minuto;
+}
+unsigned long contaMinutos2(int hora, int minuto) {
+  return hora * 60 + minuto;
+}
+
+unsigned long contaSegundos (int hora, int minuto, int segundo) {
+  return ( (hora * 3600) + (minuto * 60) + segundo ) ;
+}
+unsigned long contaSegundos2 (int hora, int minuto, int segundo) {
+  return ( (hora * 3600) + (minuto * 60) + segundo ) ;
+}
