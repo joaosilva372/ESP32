@@ -1,9 +1,10 @@
+#include <Arduino.h>
 #include <WiFi.h>
 
 // -- Mapeamento de Hardware ---
 
-#define relay1 21
-#define relay2 22
+#define relay1 25
+#define relay2 26
 
 // const auxiliar
 const char *ssid = "93CB_Fibra";
@@ -15,13 +16,15 @@ void relay_wifi();
 
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(9600);
   pinMode(relay1, OUTPUT);
   pinMode(relay2, OUTPUT);
   Serial.println();
   Serial.print("Conectado-se a ");
   Serial.println(ssid);
   WiFi.begin(ssid, password);
+  digitalWrite(relay2, HIGH);
+  digitalWrite(relay1, HIGH);
 
   while(WiFi.status() != WL_CONNECTED)
   {
@@ -83,10 +86,10 @@ void relay_wifi()
         }//FIM IF C
         else if(c !='\r') currentLine += c;
 
-          if(currentLine.endsWith("GET /H1")) digitalWrite(relay1, HIGH);
-          if(currentLine.endsWith("GET /L1")) digitalWrite(relay1, LOW);
-          if(currentLine.endsWith("GET /H2")) digitalWrite(relay2, HIGH);
-          if(currentLine.endsWith("GET /L2")) digitalWrite(relay2, LOW);
+          if(currentLine.endsWith("GET /H1")) digitalWrite(relay1, LOW);
+          if(currentLine.endsWith("GET /L1")) digitalWrite(relay1, HIGH);
+          if(currentLine.endsWith("GET /H2")) digitalWrite(relay2, LOW);
+          if(currentLine.endsWith("GET /L2")) digitalWrite(relay2, HIGH);
                 
       } //FIM IF CLIENT.AVAILABLE()
 
