@@ -9,8 +9,8 @@
 
 
 // const auxiliar
-const char *ssid = "93CB_Fibra";
-const char *password = "3J8v7n2x"; 
+const char *ssid = "Wifijoao";
+const char *password = "0102030405"; 
 
 WiFiServer server(80);
 
@@ -18,16 +18,16 @@ void relay_wifi();
 
 
 // DEFINIÇÕES
-#define horaLigar         14
-#define minutoLigar       25
+#define horaLigar         11
+#define minutoLigar       54
 #define segundoLigar      00
 
 #define horasAcionado     00
 #define minutosAcionado   10
 #define segundosAcionado  00
 
-#define horaLigar2         13
-#define minutoLigar2       40
+#define horaLigar2         11
+#define minutoLigar2       59
 #define segundoLigar2      00
 
 #define horasAcionado2     00
@@ -122,6 +122,11 @@ void loop() {
   else
   {
   digitalWrite(relay2, !LIGA); // RELE DESLIGADO;
+  }
+  if (WiFi.status() != WL_CONNECTED) {
+  delay(1000);
+  WiFi.begin(ssid, password);
+  server.begin();
   }
 }
 
