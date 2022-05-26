@@ -1,0 +1,218 @@
+// INCLUSÃO DE BIBLIOTECAS
+#include <NTPClient.h>
+#include "WiFi.h"
+#include <Arduino.h>
+
+// DEFINIÇÕES DE PINOS
+#define relay1 25
+#define relay2 26
+#define sensorChuva 35
+
+
+// const auxiliar
+const char *ssid = "Wifijoao";
+const char *password = "0102030405"; 
+
+WiFiServer server(80);
+
+void relay_wifi();
+
+
+// DEFINIÇÕES
+#define horaLigar         23
+#define minutoLigar       26
+#define segundoLigar      00
+
+#define horasAcionado     00
+#define minutosAcionado   05
+#define segundosAcionado  00
+
+#define horaLigar2         23
+#define minutoLigar2       30
+#define segundoLigar2      00
+
+#define horasAcionado2     00
+#define minutosAcionado2   06
+#define segundosAcionado2  00
+
+#define LIGA LOW
+
+// DECLARAÇÃO DE VARIÁVEIS
+unsigned long liga;     // VARIÁVEL QUE RECEBE O VALOR PARA LIGAR
+unsigned long desliga;  // VARIÁVEL QUE RECEBE O VALOR PARA DESLIGAR
+unsigned long liga2;     // VARIÁVEL QUE RECEBE O VALOR PARA LIGAR
+unsigned long desliga2;  // VARIÁVEL QUE RECEBE O VALOR PARA DESLIGAR
+
+unsigned long minutosCorrido;  // VARIAVEL QUE RECEBE O VALOR DE MINUTOS CORDRIDOS DURANTE O DIA
+unsigned long segundosCorrido; // VARIAVEL QUE RECEBE O VALOR DE SEGUNDOS CORDRIDOS DURANTE O DIA
+unsigned long minutosCorrido2;  // VARIAVEL QUE RECEBE O VALOR DE MINUTOS CORDRIDOS DURANTE O DIA
+unsigned long segundosCorrido2; // VARIAVEL QUE RECEBE O VALOR DE SEGUNDOS CORDRIDOS DURANTE O 
+
+int checkr1;
+int checkr2;
+int checkrt1;
+int checkrt2;
+
+// INSTANCIANDO OBJETOS
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "a.st1.ntp.br", -4 * 3600 , 60000); // (CONEXÃO UDP, SERVIDOR NTP, AJUSTE DE FUSO (EM MINUTOS), TEMPO DE ATUALIZAÇÃO)
+
+// DECLARAÇÃO DE FUNÇÕES
+unsigned long contaMinutos  (int hora, int minuto);
+unsigned long contaMinutos2  (int hora, int minuto);
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(sensorChuva, INPUT);
+  pinMode(relay1, OUTPUT);
+  digitalWrite(relay1, !LIGA); // COMEÇA COM RELE DESLIGADO;
+  pinMode(relay2, OUTPUT);
+  digitalWrite(relay2, !LIGA); // COMEÇA COM RELE DESLIGADO;
+
+  delay(1000); //DELAY PARA EXIBIR SERIAL.PRINT
+  Serial.print("Conectando ao WiFi ");
+
+  Serial.println();
+  Serial.print("Conectado-se a ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+
+    while(WiFi.status() != WL_CONNECTED)
+  {
+    delay(800);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi Conectado");
+  Serial.println("Endereço de IP: ");
+  Serial.print(WiFi.localIP());
+  server.begin();
+
+  timeClient.begin();
+
+    liga    = contaMinutos(horaLigar , minutoLigar);
+    desliga = contaMinutos(horaLigar + horasAcionado , minutoLigar + minutosAcionado);
+    liga2    = contaMinutos2(horaLigar2 , minutoLigar2);
+    desliga2 = contaMinutos2(horaLigar2 + horasAcionado2 , minutoLigar2 + minutosAcionado2);
+    checkr1 = 0;
+    checkr2 = 0;
+}
+
+void loop() {
+  timeClient.update(); // SINCROZINA COM O HORARIO DA INTERNET
+  minutosCorrido  = contaMinutos(timeClient.getHours(), timeClient.getMinutes());
+  minutosCorrido2  = contaMinutos(timeClient.getHours(), timeClient.getMinutes()); // CONVERTE O HORARIO PARA O PADRÃO DE MINUTOS CORRIDOS DURANTE O DIA
+ 
+  int leituraChuva = analogRead(35);
+  Serial.print("Chuva: ");
+  Serial.println (leituraChuva);
+  delay(500);
+
+ WiFiClient client = server.available();
+  if(client)
+  {
+    Serial.println("Novo Cliete Definido");
+    String currentLine ="";
+    while(client.connected())
+    {
+      if(client.available())
+      {
+        char c=client.read();
+        Serial.write(c);
+
+        if (c=='\n')
+        {
+          if(currentLine.length()==0)
+          {
+            //HTML
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-type:text/html");
+            client.println();
+            client.println("<h2>Clique <a href=\"/H1\">AQUI</a> Para ligar o rele 1.</h2><br>");
+            client.println("<h2>Clique <a href=\"/L1\">AQUI</a> Para desligar o rele 1.</h2><br>");
+            client.println("<h2>Clique <a href=\"/H2\">AQUI</a> Para ligar o rele 2.</h2><br>");
+            client.println("<h2>Clique <a href=\"/L2\">AQUI</a> Para desligar o rele 2.</h2><br>");
+            client.println();
+            break;                            
+           } //FIM if(currentLine.length()==0)
+
+          else currentLine ="";
+           
+        }//FIM IF C
+        else if(c !='\r') currentLine += c;
+
+          if(currentLine.endsWith("GET /H1")){
+             //digitalWrite(relay1, LOW);
+             checkr1 = 1;
+             }
+          if(currentLine.endsWith("GET /L1")) {
+            //digitalWrite(relay1, HIGH);
+            checkr1 =  0;
+            }
+          if(currentLine.endsWith("GET /H2")){ 
+           //digitalWrite(relay2, LOW);
+           checkr2 = 1;
+            }
+          if(currentLine.endsWith("GET /L2")){ 
+            //digitalWrite(relay2, HIGH);
+            checkr2 = 0;
+            }
+                
+      } //FIM IF CLIENT.AVAILABLE()
+
+
+      
+    }// FIM WHILE
+    client.stop();
+    Serial.println("Client Disconectado.");
+  }// FIM IF CLIENT
+  checkrt1 = checkr1;
+  checkrt2 = checkr2;
+  Serial.println (checkrt1);
+  Serial.println (checkrt2);
+  delay(500);
+
+  if ((minutosCorrido >= liga && minutosCorrido < desliga && leituraChuva >= 1600) or (checkrt1 == 1))  {
+    digitalWrite(relay1, LIGA); // RELE LIGADO;
+
+    Serial.print("LIGADO!!: ");
+    Serial.println(timeClient.getFormattedTime());
+    delay(1000);
+  }
+  else
+  {
+  digitalWrite(relay1, !LIGA); // RELE DESLIGADO;
+  }
+  if ((minutosCorrido2 >= liga2 && minutosCorrido2 < desliga2 && leituraChuva >= 1600) or (checkrt2 == 1)) {
+    digitalWrite(relay2, LIGA); // RELE LIGADO;
+
+    Serial.print("LIGADO!!: ");
+    Serial.println(timeClient.getFormattedTime());
+    delay(1000);
+  }
+  else
+  {
+  digitalWrite(relay2, !LIGA); // RELE DESLIGADO;
+  }
+  if (WiFi.status() != WL_CONNECTED) {
+  delay(1000);
+  WiFi.begin(ssid, password);
+  server.begin();
+  }
+}
+
+// IMPLEMENTO DE FUNÇÕES
+
+unsigned long contaMinutos(int hora, int minuto) {
+  return hora * 60 + minuto;
+}
+unsigned long contaMinutos2(int hora, int minuto) {
+  return hora * 60 + minuto;
+}
+
+unsigned long contaSegundos (int hora, int minuto, int segundo) {
+  return ( (hora * 3600) + (minuto * 60) + segundo ) ;
+}
+unsigned long contaSegundos2 (int hora, int minuto, int segundo) {
+  return ( (hora * 3600) + (minuto * 60) + segundo ) ;
+}
