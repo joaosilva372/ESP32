@@ -172,7 +172,7 @@ void loop() {
   Serial.println (checkrt2);
   delay(500);
 
-  if ((minutosCorrido >= liga && minutosCorrido < desliga && leituraChuva >= 1600) or (checkrt1 == 1))  {
+  if ((minutosCorrido >= liga && minutosCorrido < desliga && leituraChuva >= 2100) or (checkrt1 == 1 && leituraChuva >= 2500))  {
     digitalWrite(relay1, LIGA); // RELE LIGADO;
 
     Serial.print("LIGADO!!: ");
@@ -183,7 +183,7 @@ void loop() {
   {
   digitalWrite(relay1, !LIGA); // RELE DESLIGADO;
   }
-  if ((minutosCorrido2 >= liga2 && minutosCorrido2 < desliga2 && leituraChuva >= 1600) or (checkrt2 == 1)) {
+  if ((minutosCorrido2 >= liga2 && minutosCorrido2 < desliga2 && leituraChuva >= 2100) or (checkrt2 == 1 && leituraChuva >= 2500)) {
     digitalWrite(relay2, LIGA); // RELE LIGADO;
 
     Serial.print("LIGADO!!: ");
